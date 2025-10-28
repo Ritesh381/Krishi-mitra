@@ -13,6 +13,9 @@ function Dashboard() {
   const handleCropSuggestionsRedirect = () => {
     navigate('/crop-suggestions')
   }
+  const handleMarketPricesRedirect = () => {
+    navigate('/market-prices')
+  }
 
   // Add individual handlers for each feature (you can create more as needed)
   const handleFeatureClick = (route) => {
@@ -25,6 +28,9 @@ function Dashboard() {
     // Add more route handling here as you create more pages
     else if (route === '/chat') {
       navigate('/chat')
+    }
+    else if (route === '/market-prices') {
+      handleMarketPricesRedirect()
     }
     // etc.
   }
