@@ -1,11 +1,36 @@
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from '../utils/useTranslation'
+import { useNavigate } from 'react-router-dom'
 
 function Dashboard() {
   const { t, currentLanguage } = useTranslation()
+  const navigate = useNavigate();
 
-  useEffect(()=>{
-    window.scrollTo(0,0);
+  const handlePestDetectionRedirect = () => {
+    navigate('/pest-detection')
+  }
+
+  const handleCropSuggestionsRedirect = () => {
+    navigate('/crop-suggestions')
+  }
+
+  // Add individual handlers for each feature (you can create more as needed)
+  const handleFeatureClick = (route) => {
+    if (route === '/pest-detection') {
+      handlePestDetectionRedirect()
+    }
+    else if (route === '/crop-suggestions') {
+      handleCropSuggestionsRedirect()
+    }
+    // Add more route handling here as you create more pages
+    // else if (route === '/ai-chat') {
+    //   navigate('/ai-chat')
+    // }
+    // etc.
+  }
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
   })
   
   const [user] = useState({
@@ -234,6 +259,7 @@ function Dashboard() {
             {mainFeatures.map((feature, index) => (
               <div
                 key={index}
+                onClick={() => handleFeatureClick(feature.route)}
                 className="group bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-green-100/50 hover:shadow-2xl transition-all duration-500 cursor-pointer transform hover:scale-105"
               >
                 <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
@@ -248,7 +274,13 @@ function Dashboard() {
                   {feature.description}
                 </p>
                 
-                <button className="flex items-center text-green-700 hover:text-green-800 font-semibold transition-colors group-hover:translate-x-1 transform duration-200">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation() // Prevent double click
+                    handleFeatureClick(feature.route)
+                  }}
+                  className="flex items-center text-green-700 hover:text-green-800 font-semibold transition-colors group-hover:translate-x-1 transform duration-200"
+                >
                   <span>{t('getStartedBtn')}</span>
                   <span className="ml-2 text-lg">→</span>
                 </button>
