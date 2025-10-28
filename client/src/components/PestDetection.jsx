@@ -15,7 +15,7 @@ function PestDetection() {
   const [isSpeaking, setIsSpeaking] = useState(false)
 
   // API Configuration
-  const API_BASE_URL = 'http://localhost:8080'
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080/api'
 
   // Text-to-Speech function
   const speakText = (text) => {
@@ -259,12 +259,12 @@ function PestDetection() {
     setError(null)
 
     try {
-      console.log('Sending request to:', `${API_BASE_URL}/api/plant/analyze`)
+      console.log('Sending request to:', `${API_BASE_URL}/plant/analyze`)
       
       const formData = new FormData()
       formData.append('image', uploadedImage.file)
 
-      const response = await fetch(`${API_BASE_URL}/api/plant/analyze`, {
+      const response = await fetch(`${API_BASE_URL}/plant/analyze`, {
         method: 'POST',
         body: formData,
         headers: {

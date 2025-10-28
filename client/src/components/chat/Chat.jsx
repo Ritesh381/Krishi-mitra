@@ -31,7 +31,7 @@ const useTranslation = () => ({
 // -----------------------------------------------------------
 
 // --- Configuration & Constants ---
-const API_BASE_URL = 'http://localhost:8080/api'; 
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080/api"
 const CHAT_API_URL = `${API_BASE_URL}/chat`;
 
 // Helper for API calls with Exponential Backoff (Now using Axios)
