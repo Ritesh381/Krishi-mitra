@@ -4,13 +4,15 @@ require('dotenv').config();
 const connectDB = require("./config/db.js");
 const app = express();
 const PORT = process.env.PORT || 5000;
-const chatRouter = require("./routes/Chat.routers.js")
+const cookieParser = require("cookie-parser");
+const chatRouter = require("./routes/Chat.routes.js")
 const authRouter = require('./routes/auth.routes.js');
 // const cropRouter = require('./routes/crop.routes.js');
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
 
 connectDB()
 
