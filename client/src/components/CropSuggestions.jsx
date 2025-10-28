@@ -65,7 +65,7 @@ function CropSuggestions() {
   
     // 🔗 API endpoint connection
     const backend = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080/api"
-    const backendUrl = `${backend}crop/recommend`;
+    const backendUrl = `${backend}/crop/recommend`;
 
     try {
       const response = await fetch(backendUrl, {
