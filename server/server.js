@@ -8,8 +8,8 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 //import routes
-authRouter = require('./routes/auth.routes.js');
-cropRouter = require('./routes/crop.routes.js');
+const authRouter = require('./routes/auth.routes.js');
+const cropRouter = require('./routes/crop.routes.js');
 
 // Middleware
 app.use(cors());
