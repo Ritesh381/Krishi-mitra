@@ -19,6 +19,9 @@ function Dashboard() {
   const handleIrrigationPlannerRedirect = () => {
     navigate('/irrigation-planner')
   }
+  const handleWeatherForecastRedirect = () => {
+    navigate('/weather-forecast')
+  }
 
   // Add individual handlers for each feature (you can create more as needed)
   const handleFeatureClick = (route) => {
@@ -37,6 +40,9 @@ function Dashboard() {
     }
     else if (route === '/irrigation') {
       handleIrrigationPlannerRedirect()
+    }
+    else if (route === '/weather') {
+      handleWeatherForecastRedirect()
     }
     // etc.
   }
