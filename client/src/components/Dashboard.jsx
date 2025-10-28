@@ -23,9 +23,9 @@ function Dashboard() {
       handleCropSuggestionsRedirect()
     }
     // Add more route handling here as you create more pages
-    // else if (route === '/ai-chat') {
-    //   navigate('/ai-chat')
-    // }
+    else if (route === '/chat') {
+      navigate('/chat')
+    }
     // etc.
   }
 
@@ -128,7 +128,7 @@ function Dashboard() {
       icon: '🤖',
       color: 'from-blue-500 to-cyan-600',
       bgColor: 'bg-blue-50',
-      route: '/ai-chat'
+      route: '/chat'
     },
     {
       title: t('pestDetectionDash'),

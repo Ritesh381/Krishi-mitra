@@ -11,16 +11,14 @@ const cookieOptions = {
 
 const signUp = async (req, res) => {
   try {
-    const { username, email, password, name, location, farmSize } = req.body;
+    const { email, password, name, location, farmSize } = req.body;
 
     // Check if user exists
-    const existingUser = await User.findOne({
-      $or: [{ email }, { username }],
-    });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res
         .status(400)
-        .json({ message: "User with this email or username already exists" });
+        .json({ message: "User with this email already exists" });
     }
 
     // Validate farmSize if provided
@@ -32,12 +30,12 @@ const signUp = async (req, res) => {
     }
 
     // Create user (password will be hashed automatically via schema pre-save)
-    const user = new User({ username, email, password, name, location, farmSize });
+    const user = new User({ email, password, name, location, farmSize });
     await user.save();
 
     // Generate JWT
     const token = jwt.sign(
-      { id: user._id, username: user.username, email: user.email },
+      { id: user._id, email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -50,7 +48,6 @@ const signUp = async (req, res) => {
         message: "User registered successfully",
         user: {
           id: user._id,
-          username: user.username,
           email: user.email,
           name: user.name,
           location: user.location,
@@ -78,7 +75,7 @@ const signIn = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, username: user.username, email: user.email },
+      { id: user._id, email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -89,7 +86,6 @@ const signIn = async (req, res) => {
         message: "Login successful",
         user: {
           id: user._id,
-          username: user.username,
           email: user.email,
         },
       });
@@ -113,6 +109,5 @@ const logout = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-
 
 module.exports = { signIn, signUp, logout };

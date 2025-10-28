@@ -1,61 +1,75 @@
-// controllers/cropController.js
 const { cropModels } = require("../models/crop.model.js");
-const callModel = require("../config/ai");
+const {callModel} = require("../config/ai");
 const { getLocationWeather } = require("../utils/location");
 const prompts = require("../config/prompts.js"); // 👈 Import Krishi Mitra persona
 
 exports.getCropRecommendations = async (req, res) => {
   try {
-    const { latitude, longitude } = req.body;
+    // 🚜 1️⃣ Extract all detailed inputs from the frontend
+    const {
+      location,
+      farmSize,
+      soilType,
+      season,
+      waterSource,
+      budget,
+      experience,
+      preference,
+    } = req.body;
 
-    // 🧭 1️⃣ Validate inputs
-    if (!latitude || !longitude) {
-      return res.status(400).json({ error: "Latitude and longitude are required." });
-    }
+    // 🧭 2️⃣ Validate required input
+    if (!location || !soilType || !season) {
+      return res
+        .status(400)
+        .json({ error: "Location, Soil Type, and Season are required for personalized recommendation." });
+    } 
 
-    // 🌤️ 2️⃣ Get location & weather (handled in utils)
-    const { name: locationName, temp, humidity } = await getLocationWeather(
-      latitude,
-      longitude
-    );
-    const currentMonth = new Date().getMonth() + 1;
+    // 🌤️ 3️⃣ Mock or set up basic context. Since the frontend doesn't provide lat/long,
+    // we use fixed default values for the prompt context, relying mostly on the form data.
+    const locationName = location;
+    const temp = 25; // Approx average temperature
+    const humidity = 65; // Approx average humidity
+    const currentMonth = new Date().getMonth() + 1; // Current month
 
-    // 🌾 3️⃣ Match local crop models for quick fallback
-    const suitableCrops = cropModels.filter((crop) => {
-      const tempOK = temp >= crop.tempRange[0] && temp <= crop.tempRange[1];
-      const humidityOK =
-        humidity >= crop.humidityRange[0] && humidity <= crop.humidityRange[1];
-      return tempOK && humidityOK;
-    });
-
-    // 💬 4️⃣ Build AI prompt with Krishi Mitra persona
+    // 💬 4️⃣ Build a comprehensive AI prompt with all form details
     const prompt = `
 ${prompts.chatInit}
 
-Now, as Krishi Mitra, use this weather information to recommend crops to the farmer.
+As Krishi Mitra, recommend the best crops based on the farmer's detailed inputs below.
 
-Location: ${locationName}
-Temperature: ${temp}°C
-Humidity: ${humidity}%
-Month: ${currentMonth}
+**FARMER PROFILE:**
+Location: ${locationName} (India)
+Soil Type: ${soilType}
+Intended Season: ${season}
+Farm Size: ${farmSize || 'Not specified'}
+Water Source: ${waterSource || 'Not specified (assume moderate irrigation)'}
+Budget: ${budget || 'Not specified (assume moderate budget)'}
+Farming Experience: ${experience || 'Not specified'}
+Crop Preference: ${preference || 'None'}
 
-Recommend the top 3 crops that the farmer should plant this month.
+**CURRENT CONDITIONS (for context):**
+Current Month: ${currentMonth}
+Approximate Temperature: ${temp}°C
+Approximate Humidity: ${humidity}%
 
-Your answer must be in **valid JSON only**, using this format:
+**TASK:**
+Recommend the top 3 crops that match the farmer's profile, prioritizing profitability, water conservation (if water source is rain-fed), and suitability for the soil/season. Ensure the 'name' is simple/local and the 'profit' and 'water' fields use simple, non-numeric descriptive text (e.g., 'High', 'Medium', 'Drip required').
+
+Your answer must be in **valid JSON only**, using this exact format (return an array of objects):
 
 [
   {
-    "name": "Crop Name (in simple words, can include local name)",
+    "name": "Crop Name (in local language/simple words)",
     "icon": "🌾",
-    "profit": "₹/acre or simple estimate",
-    "plantingTime": "Month/Date Range",
-    "duration": "Days to harvest",
-    "water": "Simple irrigation info",
-    "reason": "Why it suits this weather (simple and clear)"
+    "profit": "Simple, relative profit estimate (e.g., High, Medium, ₹/acre)",
+    "plantingTime": "Month/Date Range for the specified season",
+    "duration": "Days/Months to harvest",
+    "water": "Simple irrigation info (e.g., Low, Drip irrigation recommended)",
+    "reason": "Why this crop is best suited for the farmer's specific Soil Type, Season, and Budget/Experience (short, 1-2 sentences)."
   }
 ]
 
-Make it specific to ${locationName}, India.
+Do not include any text, greetings, or explanations outside the JSON array.
 `;
 
     // 🤖 5️⃣ Call Gemini for recommendations
@@ -63,28 +77,16 @@ Make it specific to ${locationName}, India.
     try {
       crops = await callModel(prompt);
     } catch (err) {
-      console.warn("Gemini failed, falling back to local model:", err.message);
+      console.error("Gemini failed, check JSON parsing or model output:", err.message);
+      // NOTE: Fallback to local model removed as it relies on simple weather data which is insufficient for the new detailed inputs.
     }
 
-    // 🪴 6️⃣ Fallback if AI fails
-    if (!crops.length && suitableCrops.length) {
-      crops = suitableCrops.map((c) => ({
-        name: c.name,
-        icon: c.icon,
-        profit: c.profit,
-        plantingTime: c.plantingTime,
-        duration: c.duration,
-        water: c.water,
-        reason: "Good match for current weather based on local data.",
-      }));
-    }
-
-    // 🌍 7️⃣ Respond to frontend
+    // 🌍 6️⃣ Respond to frontend
     res.json({
       location: locationName,
       temperature: temp,
       humidity,
-      crops,
+      crops: Array.isArray(crops) ? crops : [], // Ensure crops is an array, even if empty
     });
   } catch (error) {
     console.error("Error in crop recommendation:", error.message);
