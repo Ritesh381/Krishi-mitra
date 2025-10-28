@@ -1,5 +1,5 @@
 const fs = require("fs");
-const callModel = require("../config/ai");
+const {callModel} = require("../config/ai");
 const prompts = require("../config/prompts");
 
 /**
