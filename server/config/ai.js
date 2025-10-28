@@ -9,6 +9,7 @@ async function callModel(prompt) {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
+      history:[],
       // Requesting JSON output
       config: {
         responseMimeType: "application/json", 

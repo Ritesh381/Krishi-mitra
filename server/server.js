@@ -1,15 +1,12 @@
 const express = require('express');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const cors = require('cors');
 require('dotenv').config();
 const connectDB = require("./config/db.js");
 const app = express();
 const PORT = process.env.PORT || 5000;
-
-//import routes
+const chatRouter = require("./routes/Chat.routers.js")
 const authRouter = require('./routes/auth.routes.js');
-const cropRouter = require('./routes/crop.routes.js');
+// const cropRouter = require('./routes/crop.routes.js');
 
 // Middleware
 app.use(cors());
@@ -23,7 +20,10 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/auth', authRouter);
-app.use('/api/crop', cropRouter);
+// app.use('/api/crop', cropRouter);
+
+//Routers
+app.use("/api/chat", chatRouter)
 
 // Start server
 app.listen(PORT, () => {
