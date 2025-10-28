@@ -8,6 +8,7 @@ import Dashboard from './components/Dashboard.jsx'
 import Chat from './components/chat/Chat.jsx'
 import PestDetection from './components/PestDetection.jsx'
 import CropSuggestions from './components/CropSuggestions.jsx'
+import MarketPrices from './components/MarketPrices.jsx'
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
   <Route path='/chat' element={<Chat/>}></Route>
   <Route path="/pest-detection" element={<PestDetection />} />
   <Route path="/crop-suggestions" element={<CropSuggestions />} />
+  <Route path="/market-prices" element={<MarketPrices />} />
       </Routes>
     </Router>
   )
