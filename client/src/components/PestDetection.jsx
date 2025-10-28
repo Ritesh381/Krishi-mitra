@@ -263,6 +263,7 @@ function PestDetection() {
       
       const formData = new FormData()
       formData.append('image', uploadedImage.file)
+      formData.append('language', currentLanguage)
 
       const response = await fetch(`${API_BASE_URL}/plant/analyze`, {
         method: 'POST',
