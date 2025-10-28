@@ -11,31 +11,38 @@ const cookieOptions = {
 
 const signUp = async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, name, location, farmSize } = req.body;
 
+    // Check if user exists
     const existingUser = await User.findOne({
       $or: [{ email }, { username }],
     });
-
     if (existingUser) {
       return res
         .status(400)
         .json({ message: "User with this email or username already exists" });
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Validate farmSize if provided
+    const allowedFarmSizes = ["small", "medium", "large"];
+    if (farmSize && !allowedFarmSizes.includes(farmSize)) {
+      return res
+        .status(400)
+        .json({ message: `Invalid farmSize. Allowed values: ${allowedFarmSizes.join(", ")}` });
+    }
 
-    const user = new User({ username, email, password: hashedPassword });
+    // Create user (password will be hashed automatically via schema pre-save)
+    const user = new User({ username, email, password, name, location, farmSize });
     await user.save();
 
+    // Generate JWT
     const token = jwt.sign(
       { id: user._id, username: user.username, email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    // Send cookie
+    // Send response with cookie
     res
       .cookie("token", token, cookieOptions)
       .status(201)
@@ -45,14 +52,16 @@ const signUp = async (req, res) => {
           id: user._id,
           username: user.username,
           email: user.email,
+          name: user.name,
+          location: user.location,
+          farmSize: user.farmSize,
         },
       });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
 
 const signIn = async (req, res) => {
   try {
