@@ -20,6 +20,11 @@ exports.analyzePlant = async (req, res) => {
       const imageBase64 = fs.readFileSync(req.file.path, { encoding: "base64" });
       prompt += `\n\nHere is the plant photo in base64:\n${imageBase64}`;
 
+      //Add langauge preference of response
+      if (req.body.language) {
+        prompt += `\n\nPlease respond in ${req.body.language}. and make sure to translate any scientific terms appropriately. also respond with the language sent and not english `;
+      }
+
       // Delete the uploaded image after reading
       fs.unlink(req.file.path, () => {});
     } else if (req.body.description) {
