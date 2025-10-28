@@ -16,6 +16,9 @@ function Dashboard() {
   const handleMarketPricesRedirect = () => {
     navigate('/market-prices')
   }
+  const handleIrrigationPlannerRedirect = () => {
+    navigate('/irrigation-planner')
+  }
 
   // Add individual handlers for each feature (you can create more as needed)
   const handleFeatureClick = (route) => {
@@ -31,6 +34,9 @@ function Dashboard() {
     }
     else if (route === '/market-prices') {
       handleMarketPricesRedirect()
+    }
+    else if (route === '/irrigation') {
+      handleIrrigationPlannerRedirect()
     }
     // etc.
   }
