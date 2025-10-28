@@ -1,10 +1,18 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from '../utils/useTranslation'
+import { useAuth } from '../context/AuthContext'
 
 function Signup() {
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [location, setLocation] = useState('')
+  const [farmSize, setFarmSize] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
   
   const handleLoginRedirect = () => {
     navigate('/login')
@@ -12,9 +20,20 @@ function Signup() {
   const handleHomeRedirect = () => {
     navigate('/landing')
   }
-  const handleDashboardRedirect = (e) =>{
+  const { register } = useAuth()
+
+  const handleDashboardRedirect = async (e) =>{
     e.preventDefault()
-    navigate('/dashboard')
+    setError(null)
+    setLoading(true)
+    try {
+      const data = await register({ name, email, password, location, farmSize })
+      setLoading(false)
+      navigate('/dashboard')
+    } catch (err) {
+      setError(err.data?.message || err.message || 'Network error')
+      setLoading(false)
+    }
   }
 
   useEffect(()=>{
@@ -68,7 +87,7 @@ function Signup() {
           </div>
 
           {/* Signup Form */}
-          <form className="space-y-6">
+          <form className="space-y-6" onSubmit={handleDashboardRedirect}>
             {/* Personal Information */}
             <div className="grid md:grid-cols-2 gap-4">
               <div>
@@ -77,8 +96,11 @@ function Signup() {
                 </label>
                 <input
                   type="text"
+                  value={name}
+                  onChange={(e)=>setName(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border-2 border-green-200 focus:border-green-500 focus:outline-none transition-all duration-300"
                   placeholder={t('enterFullName')}
+                  required
                 />
               </div>
 
@@ -100,8 +122,11 @@ function Signup() {
               </label>
               <input
                 type="email"
+                value={email}
+                onChange={(e)=>setEmail(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border-2 border-green-200 focus:border-green-500 focus:outline-none transition-all duration-300"
                 placeholder="farmer@example.com"
+                required
               />
             </div>
 
@@ -114,8 +139,11 @@ function Signup() {
                 <div className="relative">
                   <input
                     type="password"
+                    value={password}
+                    onChange={(e)=>setPassword(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl border-2 border-green-200 focus:border-green-500 focus:outline-none transition-all duration-300 pr-12"
                     placeholder={t('createPassword')}
+                    required
                   />
                   <button
                     type="button"
@@ -138,6 +166,8 @@ function Signup() {
                 </label>
                 <input
                   type="text"
+                  value={location}
+                  onChange={(e)=>setLocation(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border-2 border-green-200 focus:border-green-500 focus:outline-none transition-all duration-300"
                   placeholder={t('locationPlaceholder')}
                 />
@@ -147,7 +177,7 @@ function Signup() {
                 <label className="block text-sm font-semibold text-green-800 mb-2">
                   {t('farmSize')}
                 </label>
-                <select className="w-full px-4 py-3 rounded-xl border-2 border-green-200 focus:border-green-500 focus:outline-none transition-all duration-300">
+                <select value={farmSize} onChange={(e)=>setFarmSize(e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-green-200 focus:border-green-500 focus:outline-none transition-all duration-300">
                   <option value="">{t('selectFarmSize')}</option>
                   <option value="small">{t('smallFarm')}</option>
                   <option value="medium">{t('mediumFarm')}</option>
@@ -158,13 +188,17 @@ function Signup() {
             
             {/* Submit Button */}
             <button
-              type="button"
-              className="w-full bg-gradient-to-r cursor-pointer from-green-600 to-emerald-600 text-white py-3 px-4 rounded-xl font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center justify-center"
-              onClick={handleDashboardRedirect}
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-r cursor-pointer from-green-600 to-emerald-600 text-white py-3 px-4 rounded-xl font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center justify-center disabled:opacity-60"
             >
               <span className="mr-2">🌱</span>
-              {t('createAccountBtn')}
+              {loading ? 'Creating...' : t('createAccountBtn')}
             </button>
+
+            {error && (
+              <div className="text-red-600 text-sm text-center mt-2">{error}</div>
+            )}
           </form>
 
           {/* Login Link */}

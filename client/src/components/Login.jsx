@@ -1,10 +1,15 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from '../utils/useTranslation'
+import { useAuth } from '../context/AuthContext'
 
 function Login() {
     const navigate = useNavigate()
     const { t } = useTranslation()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false)
     
     const handleHomeRedirect = () => {
       navigate('/landing')
@@ -12,9 +17,20 @@ function Login() {
    const handleSignupRedirect = () => {
       navigate('/signup')
     }
-    const handleDashboardRedirect = (e) =>{
+    const { login } = useAuth()
+
+    const handleDashboardRedirect = async (e) =>{
         e.preventDefault()
-      navigate('/dashboard')
+        setError(null)
+        setLoading(true)
+        try {
+          const data = await login(email, password)
+          setLoading(false)
+          navigate('/dashboard')
+        } catch (err) {
+          setError(err.data?.message || err.message || 'Network error')
+          setLoading(false)
+        }
     }
     useEffect(()=>{
         window.scrollTo(0,0);
@@ -66,7 +82,7 @@ function Login() {
           </div>
 
           {/* Login Form */}
-          <form className="space-y-6">
+          <form className="space-y-6" onSubmit={handleDashboardRedirect}>
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-semibold text-green-800 mb-2">
@@ -76,8 +92,11 @@ function Login() {
                 <input
                   type="email"
                   id="email"
+                  value={email}
+                  onChange={(e)=>setEmail(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border-2 border-green-200 focus:border-green-500 focus:outline-none transition-all duration-300"
                   placeholder="farmer@example.com"
+                  required
                 />
                 <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-400">
                   📧
@@ -94,8 +113,11 @@ function Login() {
                 <input
                   type="password"
                   id="password"
+                  value={password}
+                  onChange={(e)=>setPassword(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border-2 border-green-200 focus:border-green-500 focus:outline-none transition-all duration-300 pr-12"
                   placeholder={t('password')}
+                  required
                 />
                 <button
                   type="button"
@@ -126,13 +148,17 @@ function Login() {
 
             {/* Submit Button */}
             <button
-              type="button"
-              className="w-full bg-gradient-to-r cursor-pointer from-green-600 to-emerald-600 text-white py-3 px-4 rounded-xl font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center justify-center"
-              onClick={handleDashboardRedirect}
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-r cursor-pointer from-green-600 to-emerald-600 text-white py-3 px-4 rounded-xl font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center justify-center disabled:opacity-60"
             >
               <span className="mr-2">🚀</span>
-              {t('signIn')}
+              {loading ? 'Signing in...' : t('signIn')}
             </button>
+
+            {error && (
+              <div className="text-red-600 text-sm text-center mt-2">{error}</div>
+            )}
           </form>
 
           {/* Sign Up Link */}

@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useTranslation } from '../utils/useTranslation'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 function Dashboard() {
   const { t, currentLanguage } = useTranslation()
   const navigate = useNavigate();
+  const { user, logout } = useAuth()
 
   const handlePestDetectionRedirect = () => {
     navigate('/pest-detection')
@@ -51,27 +53,29 @@ function Dashboard() {
     window.scrollTo(0, 0);
   })
   
-  const [user] = useState({
-    name: currentLanguage === 'hi' ? 'रमेश कुमार' : 
-          currentLanguage === 'gu' ? 'રમેશ કુમાર' :
-          currentLanguage === 'mr' ? 'रमेश कुमार' :
-          currentLanguage === 'ta' ? 'ரமேஷ் குமார்' :
-          'Ramesh Kumar',
-    location: currentLanguage === 'hi' ? 'पुणे, महाराष्ट्र' :
-              currentLanguage === 'gu' ? 'પુણે, મહારાષ્ટ્ર' :
-              currentLanguage === 'mr' ? 'पुणे, महाराष्ट्र' :
-              currentLanguage === 'ta' ? 'புணே, மகாராஷ்டிரா' :
-              'Pune, Maharashtra',
-    farmSize: currentLanguage === 'hi' ? '5 एकड़' :
-              currentLanguage === 'gu' ? '5 એકર' :
-              currentLanguage === 'mr' ? '5 एकर' :
-              currentLanguage === 'ta' ? '5 ஏக்கர்' :
-              '5 acres'
-  })
+  const [localUser, setLocalUser] = useState(null)
+
+  useEffect(() => {
+    // prioritize server-provided user (via auth context/localStorage)
+    try {
+      const raw = localStorage.getItem('user')
+      if (raw) setLocalUser(JSON.parse(raw))
+    } catch (e) {}
+  }, [])
+
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef(null)
+  useEffect(() => {
+    function onDoc(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
+    }
+    document.addEventListener('click', onDoc)
+    return () => document.removeEventListener('click', onDoc)
+  }, [])
 
   // Weather data structure (API-ready)
   const [weatherData] = useState({
-    location: user.location,
+  location: (localUser && localUser.location) || user?.location || user?.email || '—',
     current: {
       temp: 28,
       condition: currentLanguage === 'hi' ? 'आंशिक बादल' :
@@ -208,15 +212,28 @@ function Dashboard() {
               </div>
             </div>
             
-            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-4">
               <button className="p-2 rounded-lg bg-green-100 hover:bg-green-200 transition-colors">
                 <span className="text-xl">🔔</span>
               </button>
               <button className="p-2 rounded-lg bg-green-100 hover:bg-green-200 transition-colors">
                 <span className="text-xl">⚙️</span>
               </button>
-              <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-semibold text-sm">RK</span>
+              <div className="relative" ref={menuRef}>
+                <button onClick={() => setMenuOpen(v => !v)} className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center focus:outline-none">
+                  <span className="text-white font-semibold text-sm">{(localUser && localUser.name) ? localUser.name.split(' ').map(n=>n[0]).slice(0,2).join('') : (user?.name ? user.name.split(' ').map(n=>n[0]).slice(0,2).join('') : 'U')}</span>
+                </button>
+
+                {menuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border p-2 z-50">
+                    <div className="px-3 py-2 border-b">
+                      <p className="font-semibold text-sm">{(localUser && localUser.name) || user?.name || 'User'}</p>
+                      <p className="text-xs text-gray-500">{(localUser && localUser.email) || user?.email || ''}</p>
+                    </div>
+                    <button onClick={() => { setMenuOpen(false); navigate('/dashboard') }} className="w-full text-left px-3 py-2 hover:bg-gray-50">Profile</button>
+                    <button onClick={() => { setMenuOpen(false); logout() }} className="w-full text-left px-3 py-2 text-red-600 hover:bg-gray-50">Logout</button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -312,8 +329,8 @@ function Dashboard() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
             <div>
               <h3 className="text-2xl font-bold mb-2">{t('farmOverview')}</h3>
-              <p className="opacity-90 mb-4 md:mb-0">
-                📍 {user.location} • 🏡 {user.farmSize} • 🌾 3 {t('activeCrops')}
+                <p className="opacity-90 mb-4 md:mb-0">
+                📍 {(localUser && localUser.location) || user?.location || '—'} • 🏡 {(localUser && localUser.farmSize) || user?.farmSize || '—'} • 🌾 3 {t('activeCrops')}
               </p>
             </div>
           </div>
