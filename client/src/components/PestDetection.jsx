@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { useTranslation } from '../utils/useTranslation'
 import { useNavigate } from 'react-router-dom'
 
@@ -12,9 +12,71 @@ function PestDetection() {
   const [analysisResult, setAnalysisResult] = useState(null)
   const [dragActive, setDragActive] = useState(false)
   const [error, setError] = useState(null)
+  const [isSpeaking, setIsSpeaking] = useState(false)
 
-  // API Configuration - Check your backend port
+  // API Configuration
   const API_BASE_URL = 'http://localhost:8080'
+
+  // Text-to-Speech function
+  const speakText = (text) => {
+    if ('speechSynthesis' in window && currentLanguage === 'hi') {
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel()
+      
+      setIsSpeaking(true)
+      
+      const utterance = new SpeechSynthesisUtterance(text)
+      
+      // Configure for Hindi
+      utterance.lang = 'hi-IN'
+      utterance.rate = 0.8
+      utterance.pitch = 1
+      utterance.volume = 1
+      
+      // Handle speech end
+      utterance.onend = () => {
+        setIsSpeaking(false)
+      }
+      
+      utterance.onerror = () => {
+        setIsSpeaking(false)
+      }
+      
+      // Find Hindi voice if available
+      const voices = window.speechSynthesis.getVoices()
+      const hindiVoice = voices.find(voice => 
+        voice.lang === 'hi-IN' || voice.lang === 'hi'
+      )
+      
+      if (hindiVoice) {
+        utterance.voice = hindiVoice
+      }
+      
+      window.speechSynthesis.speak(utterance)
+    }
+  }
+
+  // Stop speech function
+  const stopSpeech = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel()
+      setIsSpeaking(false)
+    }
+  }
+
+  // Format text to remove unwanted characters
+  const formatText = (text) => {
+    if (!text) return text
+    
+    return text
+      .replace(/\*\*/g, '') // Remove bold markers
+      .replace(/[.,;:]/g, '') // Remove punctuation
+      .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+      .replace(/^\s+|\s+$/g, '') // Trim whitespace
+      .replace(/\//g, ' ') // Replace forward slashes with spaces
+      .replace(/-+/g, '') // Remove dashes
+      .replace(/"/g, '') // Remove quotation marks
+  }
 
   // Handle drag events
   const handleDrag = useCallback((e) => {
@@ -59,10 +121,10 @@ function PestDetection() {
       }
       reader.readAsDataURL(file)
     } else {
-      setError(currentLanguage === 'hi' ? 'कृपया केवल image फ़ाइल अपलोड करें' :
+      setError(currentLanguage === 'hi' ? 'कृपया केवल image फाइल अपलोड करें' :
                 currentLanguage === 'gu' ? 'કૃપા કરીને ફક્ત image ફાઇલ અપલોડ કરો' :
                 currentLanguage === 'mr' ? 'कृपया फक्त image फाइल अपलोड करा' :
-                currentLanguage === 'ta' ? 'தயவு செய்து image फाइल மட்டும் பதிவேற்றவும்' :
+                currentLanguage === 'ta' ? 'தயவு செய்து image फাइল மட்டும் பதிவேற்றவும்' :
                 'Please upload only image files')
     }
   }
@@ -70,14 +132,12 @@ function PestDetection() {
   // Parse AI response
   const parseAnalysisResponse = (analysisText) => {
     try {
-      // Ensure analysisText is a string
       const textResponse = typeof analysisText === 'string' ? analysisText : 
                           typeof analysisText === 'object' ? JSON.stringify(analysisText) : 
                           String(analysisText)
 
       console.log('Raw AI Response:', textResponse)
 
-      // Extract sections from the AI response using more flexible regex
       const sections = {
         problem: '',
         symptoms: '',
@@ -133,17 +193,17 @@ function PestDetection() {
         sections.problem = currentLanguage === 'hi' ? 'पौधे की समस्या की पहचान' :
                           currentLanguage === 'gu' ? 'છોડની સમસ્યાની ઓળખ' :
                           currentLanguage === 'mr' ? 'वनस्पतीच्या समस्येची ओळख' :
-                          currentLanguage === 'ta' ? 'தாவர समस्याচি ओळख' :
+                          currentLanguage === 'ta' ? 'தாவர समस्याची ओळख' :
                           'Plant Problem Identification'
         sections.symptoms = textResponse.substring(0, 200) + '...'
         sections.solution = textResponse.length > 200 ? textResponse.substring(200) : textResponse
       }
 
-      return {
-        name: sections.problem || (currentLanguage === 'hi' ? 'पौधे की समस्या' :
+      const result = {
+        name: formatText(sections.problem) || (currentLanguage === 'hi' ? 'पौधे की समस्या' :
                                    currentLanguage === 'gu' ? 'છોડની સમસ્યા' :
                                    currentLanguage === 'mr' ? 'वनस्पतीची समस्या' :
-                                   currentLanguage === 'ta' ? 'தாவர समস्या' :
+                                   currentLanguage === 'ta' ? 'தாவர समस्या' :
                                    'Plant Problem'),
         confidence: 90,
         severity: currentLanguage === 'hi' ? 'मध्यम' :
@@ -151,11 +211,13 @@ function PestDetection() {
                   currentLanguage === 'mr' ? 'मध्यम' :
                   currentLanguage === 'ta' ? 'நடுत्तर' :
                   'Medium',
-        description: sections.problem || sections.symptoms,
-        symptoms: [sections.symptoms || textResponse.substring(0, 150)],
-        solution: sections.solution || textResponse,
+        description: formatText(sections.problem) || formatText(sections.symptoms),
+        symptoms: [formatText(sections.symptoms) || textResponse.substring(0, 150)],
+        solution: formatText(sections.solution) || textResponse,
         rawResponse: textResponse
       }
+
+      return result
     } catch (error) {
       console.error('Error parsing analysis response:', error)
       return {
@@ -169,7 +231,7 @@ function PestDetection() {
         description: currentLanguage === 'hi' ? 'परिणाम का विश्लेषण नहीं हो सका' :
                      currentLanguage === 'gu' ? 'પરિણામનું વિશ્લેષણ કરી શકાયું નથી' :
                      currentLanguage === 'mr' ? 'परिणामाचे विश्लेषण करू शकले नाही' :
-                     currentLanguage === 'ta' ? 'முडिवুकाळ विश्लेषण कर सकाय नाहीं' :
+                     currentLanguage === 'ta' ? 'முडिवुকाळ विश्लेषण कर सकाय नाहীं' :
                      'Could not analyze results',
         symptoms: [currentLanguage === 'hi' ? 'अज्ञात लक्षण' :
                    currentLanguage === 'gu' ? 'અજાણ લક્ષણો' :
@@ -188,7 +250,7 @@ function PestDetection() {
       setError(currentLanguage === 'hi' ? 'कृपया पहले एक image अपलोड करें' :
                 currentLanguage === 'gu' ? 'કૃપા કરીને પહેલા એક image અપલોડ કરો' :
                 currentLanguage === 'mr' ? 'कृपया आधी एक image अपलोड करा' :
-                currentLanguage === 'ta' ? 'தயवु செय்து মুधল् एक image পধিवेর्रवুম्' :
+                currentLanguage === 'ta' ? 'தयवु செய्து মুধল् एक image পधिवেर्रवুম्' :
                 'Please upload an image first')
       return
     }
@@ -199,15 +261,12 @@ function PestDetection() {
     try {
       console.log('Sending request to:', `${API_BASE_URL}/api/plant/analyze`)
       
-      // Create FormData for file upload
       const formData = new FormData()
       formData.append('image', uploadedImage.file)
 
-      // Make API call to backend
       const response = await fetch(`${API_BASE_URL}/api/plant/analyze`, {
         method: 'POST',
         body: formData,
-        // Add headers for CORS
         headers: {
           'Accept': 'application/json',
         },
@@ -226,9 +285,16 @@ function PestDetection() {
       console.log('API Response data:', data)
       
       if (data.analysis) {
-        // Parse the structured AI response
         const parsedResult = parseAnalysisResponse(data.analysis)
         setAnalysisResult(parsedResult)
+        
+        // Speak the result if language is Hindi
+        if (currentLanguage === 'hi') {
+          const speechText = `${parsedResult.name}. ${parsedResult.description}. ${parsedResult.solution}`
+          setTimeout(() => {
+            speakText(speechText)
+          }, 1000) // Small delay to let UI update
+        }
       } else {
         throw new Error('No analysis data received from server')
       }
@@ -236,7 +302,6 @@ function PestDetection() {
     } catch (error) {
       console.error('Analysis failed:', error)
       
-      // More specific error messages
       let errorMessage = error.message
       if (error.message.includes('Failed to fetch') || error.message.includes('ERR_CONNECTION_REFUSED')) {
         errorMessage = currentLanguage === 'hi' ? 'सर्वर से कनेक्शन नहीं हो सका। कृपया जांचें कि सर्वर चल रहा है।' :
@@ -254,6 +319,7 @@ function PestDetection() {
 
   // Reset function
   const resetAnalysis = () => {
+    stopSpeech() // Stop any ongoing speech
     setUploadedImage(null)
     setAnalysisResult(null)
     setIsAnalyzing(false)
@@ -262,6 +328,21 @@ function PestDetection() {
       fileInputRef.current.value = ''
     }
   }
+
+  // Load voices when component mounts
+  useEffect(() => {
+    if ('speechSynthesis' in window) {
+      // Load voices
+      const loadVoices = () => {
+        window.speechSynthesis.getVoices()
+      }
+      
+      loadVoices()
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = loadVoices
+      }
+    }
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-25 to-lime-50">
@@ -284,30 +365,58 @@ function PestDetection() {
                   {currentLanguage === 'hi' ? 'कीट पहचान' :
                    currentLanguage === 'gu' ? 'કીડા પહેચાન' :
                    currentLanguage === 'mr' ? 'कीड ओळख' :
-                   currentLanguage === 'ta' ? 'பূச्चि कण्डरिदल्' :
+                   currentLanguage === 'ta' ? 'பூச्चि कण्डरिदल्' :
                    'Pest Detection'}
                 </h1>
                 <p className="text-sm text-green-600">
                   {currentLanguage === 'hi' ? 'AI-संचालित फसल निदान' :
                    currentLanguage === 'gu' ? 'AI-સંચાલિત પાક નિદાન' :
                    currentLanguage === 'mr' ? 'AI-चालित पीक निदान' :
-                   currentLanguage === 'ta' ? 'AI-इयक्कप्পडुम् பयिर् नोय् कण्डरिदल्' :
+                   currentLanguage === 'ta' ? 'AI-இयक्कप्पडुम् பयிर् नोय् কण্ডরিदல्' :
                    'AI-Powered Crop Diagnosis'}
                 </p>
               </div>
             </div>
             
             {analysisResult && (
-              <button 
-                onClick={resetAnalysis}
-                className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all duration-300"
-              >
-                {currentLanguage === 'hi' ? 'नया स्कैन' :
-                 currentLanguage === 'gu' ? 'નવું સ્કેન' :
-                 currentLanguage === 'mr' ? 'नवीन स्कॅन' :
-                 currentLanguage === 'ta' ? 'புधிয় स्कैन्' :
-                 'New Scan'}
-              </button>
+              <div className="flex items-center space-x-3">
+                {/* Voice Control Buttons for Hindi */}
+                {currentLanguage === 'hi' && (
+                  <div className="flex items-center space-x-2">
+                    <button 
+                      onClick={() => {
+                        const speechText = `${analysisResult.name}. ${analysisResult.description}. ${analysisResult.solution}`
+                        speakText(speechText)
+                      }}
+                      disabled={isSpeaking}
+                      className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition-colors disabled:opacity-50"
+                      title="आवाज में सुनें"
+                    >
+                      <span className="text-xl">{isSpeaking ? '🔊' : '🔇'}</span>
+                    </button>
+                    {isSpeaking && (
+                      <button 
+                        onClick={stopSpeech}
+                        className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition-colors"
+                        title="आवाज बंद करें"
+                      >
+                        <span className="text-xl">⏹️</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+                
+                <button 
+                  onClick={resetAnalysis}
+                  className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all duration-300"
+                >
+                  {currentLanguage === 'hi' ? 'नया स्कैन' :
+                   currentLanguage === 'gu' ? 'નવું સ્કેન' :
+                   currentLanguage === 'mr' ? 'नवीन स्कॅन' :
+                   currentLanguage === 'ta' ? 'புதिয় स्कैन्' :
+                   'New Scan'}
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -321,14 +430,14 @@ function PestDetection() {
               {currentLanguage === 'hi' ? 'अपनी फसल की फोटो अपलोड करें' :
                currentLanguage === 'gu' ? 'તમારા પાકનો ફોટો અપલોડ કરો' :
                currentLanguage === 'mr' ? 'तुमच्या पिकाचा फोटो अपलोड करा' :
-               currentLanguage === 'ta' ? 'உঙ्गळ् পयিर्-इन् পুকैप्पডত्तै পधিवের्र्वুঙ্गळ্' :
+               currentLanguage === 'ta' ? 'உங்கள் பயிர்-இன் புকैप्पडम् পতिवের्रवুम्' :
                'Upload Your Crop Photo'}
             </h2>
             <p className="text-green-600 max-w-2xl mx-auto">
               {currentLanguage === 'hi' ? 'हमारा AI तुरंत कीटों की पहचान करेगा और उपचार सुझाएगा। सर्वोत्तम परिणामों के लिए स्पष्ट, अच्छी रोशनी वाली तस्वीर लें।' :
                currentLanguage === 'gu' ? 'અમારો AI તુરંત કીડાઓની પહેચાણ કરશે અને સારવારની સૂચના આપશે. શ્રેષ્ઠ પરિણામો માટે સ્પષ્ટ, સારી પ્રકાશવાળી તસવીર લો.' :
                currentLanguage === 'mr' ? 'आमचा AI तत्काळ कीडांची ओळख करेल आणि उपचाराची सूचना देईल. सर्वोत्तम परिणामांसाठी स्पष्ट, चांगल्या प्रकाशातील फोटो घ्या.' :
-               currentLanguage === 'ta' ? 'எঙ্গळ্ AI उडনডিয়াগ পूच्চিকłै কণ্ডরিन্দু চিকित্সैয়ै পরিন্দুরैক্কুম্. চিরন্দ মুডিবুকাळুক্কু তেळিবান, নল্ল বেळিচ্চত্দিল্ পুকैप্পডম্ এডুক্কবুম্.' :
+               currentLanguage === 'ta' ? 'எங்கள் AI உடनडियाग पूच्चिकरै কण্ডরিन্দু চিকিৎসैয়ै পরিন্দুরैক্কুম्. चिरन्द मुडिवुकाळुक्कु তेळিবान, नल्ल বেळিচ্চত্दিল् পুকैप্পडম্ এডুক্কবুম্.' :
                'Our AI will instantly identify pests and suggest treatments. Take a clear, well-lit photo for best results.'}
             </p>
           </div>
@@ -343,8 +452,8 @@ function PestDetection() {
                 <h4 className="text-red-800 font-semibold">
                   {currentLanguage === 'hi' ? 'त्रुटि' :
                    currentLanguage === 'gu' ? 'ભૂલ' :
-                   currentLanguage === 'mr' ? 'त्रुटी' :
-                   currentLanguage === 'ta' ? 'পিळै' :
+                   currentLanguage === 'mr' ? 'त्रुटী' :
+                   currentLanguage === 'ta' ? 'पिळै' :
                    'Error'}
                 </h4>
                 <p className="text-red-700">{error}</p>
@@ -378,7 +487,7 @@ function PestDetection() {
                   {currentLanguage === 'hi' ? 'फोटो खींचें या अपलोड करें' :
                    currentLanguage === 'gu' ? 'ફોટો લો અથવા અપલોડ કરો' :
                    currentLanguage === 'mr' ? 'फोटो काढा किंवा अपलोड करा' :
-                   currentLanguage === 'ta' ? 'পুকैप্পডম্ এডুক্কবুম্ অল্লদু পধিবের্র্বুম্' :
+                   currentLanguage === 'ta' ? 'புകैप্পডম् এডুক্কवुम् अल्लदु পধिவের্র্বুম्' :
                    'Take Photo or Upload'}
                 </h3>
                 
@@ -386,7 +495,7 @@ function PestDetection() {
                   {currentLanguage === 'hi' ? 'फाइलों को यहाँ खींचें या ब्राउज़ करें' :
                    currentLanguage === 'gu' ? 'ફાઇલોને અહીં ખેંચો અથવા બ્રાઉઝ કરો' :
                    currentLanguage === 'mr' ? 'फाइल्स येथे ओढा किंवा ब्राउझ करा' :
-                   currentLanguage === 'ta' ? 'কোপ্পুকłै ইঙ্গে ইঝুক্কবুম্ অল্লদু উলাবুক' :
+                   currentLanguage === 'ta' ? 'கோপ্পুকłै ইঙ্গে ইঝুক্কবুম् অল্লদু উলাবुক' :
                    'Drag files here or browse'}
                 </p>
                 
@@ -398,13 +507,12 @@ function PestDetection() {
                     📁 {currentLanguage === 'hi' ? 'गैलरी से चुनें' :
                          currentLanguage === 'gu' ? 'ગેલેરીમાંથી પસંદ કરો' :
                          currentLanguage === 'mr' ? 'गॅलरीतून निवडा' :
-                         currentLanguage === 'ta' ? 'কেলরিয়ిলিরুন्दু তের্ন্দেডুক্কবুম্' :
+                         currentLanguage === 'ta' ? 'গেলরিয়িলিরুন্দু তের্ন্দেডুক্কবুম্' :
                          'Choose from Gallery'}
                   </button>
                   
                   <button
                     onClick={() => {
-                      // In real app, this would access camera
                       fileInputRef.current?.click()
                     }}
                     className="border-2 border-green-600 text-green-700 px-6 py-3 rounded-lg hover:bg-green-50 transition-all duration-300 font-semibold"
@@ -426,10 +534,10 @@ function PestDetection() {
                 />
 
                 <div className="mt-6 text-sm text-green-500">
-                  <p>{currentLanguage === 'hi' ? 'समर्थित फ़ाइल: JPG, PNG, WEBP (अधिकतम 10MB)' :
+                  <p>{currentLanguage === 'hi' ? 'समर्थित फाइल: JPG, PNG, WEBP (अधिकतम 10MB)' :
                       currentLanguage === 'gu' ? 'સપોર્ટેડ ફાઇલો: JPG, PNG, WEBP (મહત્તમ 10MB)' :
                       currentLanguage === 'mr' ? 'समर्थित फाइल: JPG, PNG, WEBP (कमाल 10MB)' :
-                      currentLanguage === 'ta' ? 'আধরিক্কप্পট্ট কোপ্পুকাळ্: JPG, PNG, WEBP (অধিকপক্ষম্ 10MB)' :
+                      currentLanguage === 'ta' ? 'आधरিক્কপ্পট্ট কোপ্পুকাळ্: JPG, PNG, WEBP (অধিকপক্ষম্ 10MB)' :
                       'Supported files: JPG, PNG, WEBP (Max 10MB)'}</p>
                 </div>
               </div>
@@ -439,7 +547,7 @@ function PestDetection() {
                   {currentLanguage === 'hi' ? 'अपलोड की गई तस्वीर' :
                    currentLanguage === 'gu' ? 'અપલોડ થયેલી તસવીર' :
                    currentLanguage === 'mr' ? 'अपलोड केलेला फोटो' :
-                   currentLanguage === 'ta' ? 'পধিবের্র্প্পট্ট পডম্' :
+                   currentLanguage === 'ta' ? 'পধিবের্র্प্পট্ট পডম্' :
                    'Uploaded Image'}
                 </h3>
                 
@@ -459,7 +567,7 @@ function PestDetection() {
                         🔍 {currentLanguage === 'hi' ? 'विश्लेषण शुरू करें' :
                              currentLanguage === 'gu' ? 'વિશ્લેષણ શરૂ કરો' :
                              currentLanguage === 'mr' ? 'विश्लेषण सुरू करा' :
-                             currentLanguage === 'ta' ? 'পকুপ্পায়্বै তোডাঙ্गবুম্' :
+                             currentLanguage === 'ta' ? 'পকুপ্পায়্বै তোডাঙ্গবুম্' :
                              'Start Analysis'}
                       </button>
                     </div>
@@ -479,7 +587,7 @@ function PestDetection() {
                         {currentLanguage === 'hi' ? 'कृपया प्रतीक्षा करें...' :
                          currentLanguage === 'gu' ? 'કૃપા કરીને રાહ જુઓ...' :
                          currentLanguage === 'mr' ? 'कृपया प्रतीक्षा करा...' :
-                         currentLanguage === 'ta' ? 'তয়বুसे কাझিয়া করুন্...' :
+                         currentLanguage === 'ta' ? 'তয়বুসে কাঝিয়া করুন্...' :
                          'Please wait...'}
                       </p>
                     </div>
@@ -494,7 +602,7 @@ function PestDetection() {
                     {currentLanguage === 'hi' ? 'नई तस्वीर' :
                      currentLanguage === 'gu' ? 'નવી તસવીર' :
                      currentLanguage === 'mr' ? 'नवीन फोटो' :
-                     currentLanguage === 'ta' ? 'পুধিয় পডম্' :
+                     currentLanguage === 'ta' ? 'পুধিয় পडম্' :
                      'New Image'}
                   </button>
                   
@@ -526,7 +634,7 @@ function PestDetection() {
                 </h4>
                 <ul className="space-y-2 text-blue-700 text-sm">
                   <li>✓ {currentLanguage === 'hi' ? 'स्पष्ट, उच्च गुणवत्ता वाली छवि का उपयोग करें' :
-                          currentLanguage === 'gu' ? 'સ્પષ্ટ, ઉચ્ચ ગુણવત્તાવાળી છબીનો ઉપયોગ કરો' :
+                          currentLanguage === 'gu' ? 'સ્પષ્ટ, ઉચ્ચ ગુણવત્તાવાળી છબીનો ઉપયોગ કરો' :
                           currentLanguage === 'mr' ? 'स्पष्ट, उच्च गुणवत्तेची प्रतिमा वापरा' :
                           currentLanguage === 'ta' ? 'তেळিবান, উচ্চ গুণবত্তা বাळী ছবির কা উপয়োগ করেন্' :
                           'Use clear, high-quality images'}</li>
@@ -567,7 +675,7 @@ function PestDetection() {
                     <div className="flex items-center space-x-2">
                       <span className="text-sm text-green-600">
                         {currentLanguage === 'hi' ? 'विश्वसनीयता:' :
-                         currentLanguage === 'gu' ? 'વિશ્વસનીયતা:' :
+                         currentLanguage === 'gu' ? 'વિશ્વસનીયતા:' :
                          currentLanguage === 'mr' ? 'विश्वसनीयता:' :
                          currentLanguage === 'ta' ? 'বিশ্বসনীয়তা:' :
                          'Confidence:'}
@@ -641,24 +749,14 @@ function PestDetection() {
                       </p>
                     </div>
                   </div>
-
-                  {/* Raw AI Response (for debugging - you can remove this) */}
-                  {process.env.NODE_ENV === 'development' && (
-                    <details className="mt-4">
-                      <summary className="cursor-pointer text-sm text-gray-500">Show Raw AI Response (Debug)</summary>
-                      <div className="mt-2 p-3 bg-gray-100 rounded text-xs text-gray-600">
-                        <pre className="whitespace-pre-wrap">{analysisResult.rawResponse}</pre>
-                      </div>
-                    </details>
-                  )}
                 </div>
 
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 sticky bottom-0 bg-gradient-to-t from-green-50 via-emerald-25 to-transparent pt-4">
                   <button className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 rounded-lg hover:shadow-lg transition-all duration-300 font-semibold">
-                    {currentLanguage === 'hi' ? '📋 रिपोর্ট সেভ করুন' :
-                     currentLanguage === 'gu' ? '📋 રિપોર્ટ સેવ કરো' :
-                     currentLanguage === 'mr' ? '📋 रिपोर्ट सेव्ह करা' :
+                    {currentLanguage === 'hi' ? '📋 रिपोर्ट सेव करें' :
+                     currentLanguage === 'gu' ? '📋 રિપોર્ટ સેવ કરો' :
+                     currentLanguage === 'mr' ? '📋 रिपोर्ट सेव्ह करा' :
                      currentLanguage === 'ta' ? '📋 রিপোর্ট সেভ করুন' :
                      '📋 Save Report'}
                   </button>
@@ -666,7 +764,7 @@ function PestDetection() {
                   <button className="flex-1 border-2 border-green-600 text-green-700 py-3 rounded-lg hover:bg-green-50 transition-all duration-300 font-semibold">
                     {currentLanguage === 'hi' ? '📤 विशेषज्ञ से साझा करें' :
                      currentLanguage === 'gu' ? '📤 નિષ્ણાત સાથે શેર કરો' :
-                     currentLanguage === 'mr' ? '📤 তজ্ঞांসোবত শেअর করা' :
+                     currentLanguage === 'mr' ? '📤 तज्ञांसोबत शेअर करा' :
                      currentLanguage === 'ta' ? '📤 নিপুণাংসহ শেয়ার করা' :
                      '📤 Share with Expert'}
                   </button>
@@ -679,7 +777,7 @@ function PestDetection() {
                     {currentLanguage === 'hi' ? '🔬 हमारा AI कैसे काम करता है' :
                      currentLanguage === 'gu' ? '🔬 અમારો AI કેવી રીતે કામ કરે છે' :
                      currentLanguage === 'mr' ? '🔬 आमचा AI कसा काम करतो' :
-                     currentLanguage === 'ta' ? '🔬 এংগাळ AI এপপডি ভেলै করতু' :
+                     currentLanguage === 'ta' ? '🔬 এঙ্গাळ AI এপপডি ভেলै করতু' :
                      '🔬 How Our AI Works'}
                   </h3>
                   <div className="space-y-4 text-gray-700">
@@ -694,9 +792,9 @@ function PestDetection() {
                            'Image Analysis'}
                         </h4>
                         <p className="text-sm">
-                          {currentLanguage === 'hi' ? 'आपकी फसल की तस्वीर का विस্তৃত विश्लेषण करता है।' :
-                           currentLanguage === 'gu' ? 'તમારા પાકની તસવીરનું વિસ્તৃત વિશ્લેષણ કરે છે.' :
-                           currentLanguage === 'mr' ? 'तुमच्या पिकाच्या फোटोचे तपशীलवार विश्লेषण करतो।' :
+                          {currentLanguage === 'hi' ? 'आपकी फसल की तस्वीर का विस्तृत विश्लेषण करता है।' :
+                           currentLanguage === 'gu' ? 'તમારા પાકની તસવીરનું વિસ્તૃત વિશ્લેષણ કરે છે.' :
+                           currentLanguage === 'mr' ? 'तुमच्या पिकाच्या फोटोचे तपशीलवार विश्लेषण करतो।' :
                            currentLanguage === 'ta' ? 'তোমার ফসলের ছবির বিস্তৃত বিশ্লেষণ করে।' :
                            'Performs detailed analysis of your crop photo.'}
                         </p>
@@ -714,7 +812,7 @@ function PestDetection() {
                            'Problem Identification'}
                         </h4>
                         <p className="text-sm">
-                          {currentLanguage === 'hi' ? 'फसल की समस्याओं और कीটों की सटीक পहचान करता है।' :
+                          {currentLanguage === 'hi' ? 'फसल की समस्याओं और कीटों की सटीक पहचान करता है।' :
                            currentLanguage === 'gu' ? 'પાકની સમસ્યાઓ અને કીડાઓની ચોક્કસ ઓળખ કરે છે.' :
                            currentLanguage === 'mr' ? 'पिकातील समस्या आणि किडांची अचूक ओळख करतो।' :
                            currentLanguage === 'ta' ? 'ফসলের সমস্যা আর কীটার সঠিক ওলख করে।' :
@@ -734,9 +832,9 @@ function PestDetection() {
                            'Simple Treatment Suggestions'}
                         </h4>
                         <p className="text-sm">
-                          {currentLanguage === 'hi' ? 'सস্তে और आসान तरीकों से इलाज के सुझाव देता है।' :
-                           currentLanguage === 'gu' ? 'સસ્તી અને સરળ પદ্ধતિઓથી સારવારની સૂચના આપે છે.' :
-                           currentLanguage === 'mr' ? 'स्वस्त आণि सोप्या पद्धतींनी उपचाराच्या सूचना देतो।' :
+                          {currentLanguage === 'hi' ? 'सस्ते और आसान तरीकों से इलाज के सुझाव देता है।' :
+                           currentLanguage === 'gu' ? 'સસ્તી અને સરળ પદ્ધતિઓથી સારવારની સૂચના આપે છે.' :
+                           currentLanguage === 'mr' ? 'स्वस्त आणि सोप्या पद्धतींनी उपचाराच्या सूचना देतो।' :
                            currentLanguage === 'ta' ? 'সস্তা আর সহজ উপায়ে চিকিৎসার সুপারিশ দেয়।' :
                            'Provides affordable and easy treatment recommendations.'}
                         </p>
