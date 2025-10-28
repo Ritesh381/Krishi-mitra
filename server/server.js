@@ -4,11 +4,12 @@ const jwt = require('jsonwebtoken');
 const cors = require('cors');
 require('dotenv').config();
 const connectDB = require("./config/db.js");
-const { getUser } = require('./controllers/User.controllers.js');
-const { signIn, signUp } = require('./controllers/auth.controllers.js');
-const {authenticateToken} = require("./middleware/auth.js")
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+//import routes
+authRouter = require('./routes/auth.routes.js');
+cropRouter = require('./routes/crop.routes.js');
 
 // Middleware
 app.use(cors());
@@ -21,14 +22,8 @@ app.get('/', (req, res) => {
   res.json({ message: 'Krishi Mitra API' });
 });
 
-// Register route
-app.post('/api/auth/register', signUp);
-
-// Login route
-app.post('/api/auth/login', signIn);
-
-// Protected route example
-app.get('/api/auth/profile', authenticateToken, getUser);
+app.use('/api/auth', authRouter);
+app.use('/api/crop', cropRouter);
 
 // Start server
 app.listen(PORT, () => {
