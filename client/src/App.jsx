@@ -6,6 +6,8 @@ import Signup from './components/Signup.jsx'
 import LoginPage from './components/Login.jsx'
 import Dashboard from './components/Dashboard.jsx'
 import Chat from './components/chat/Chat.jsx'
+import PestDetection from './components/PestDetection.jsx'
+import CropSuggestions from './components/CropSuggestions.jsx'
 
 function App() {
   return (
@@ -15,8 +17,10 @@ function App() {
         <Route path="/landing" element={<LandingPage />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path='/chat' element={<Chat/>}></Route>
+  <Route path="/dashboard" element={<Dashboard />} />
+  <Route path='/chat' element={<Chat/>}></Route>
+  <Route path="/pest-detection" element={<PestDetection />} />
+  <Route path="/crop-suggestions" element={<CropSuggestions />} />
       </Routes>
     </Router>
   )
