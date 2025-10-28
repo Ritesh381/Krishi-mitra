@@ -10,6 +10,7 @@ import PestDetection from './components/PestDetection.jsx'
 import CropSuggestions from './components/CropSuggestions.jsx'
 import MarketPrices from './components/MarketPrices.jsx'
 import IrrigationPlanner from './components/IrrigationPlanner.jsx'
+import WeatherForecast from './components/WeatherForecast.jsx'
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
   <Route path="/crop-suggestions" element={<CropSuggestions />} />
   <Route path="/market-prices" element={<MarketPrices />} />
   <Route path="/irrigation-planner" element={<IrrigationPlanner />} />
+  <Route path="/weather-forecast" element={<WeatherForecast />} />
       </Routes>
     </Router>
   )
