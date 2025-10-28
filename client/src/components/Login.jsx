@@ -1,0 +1,163 @@
+import React, { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useTranslation } from '../utils/useTranslation'
+
+function Login() {
+    const navigate = useNavigate()
+    const { t } = useTranslation()
+    
+    const handleHomeRedirect = () => {
+      navigate('/landing')
+    }   
+   const handleSignupRedirect = () => {
+      navigate('/signup')
+    }
+    const handleDashboardRedirect = (e) =>{
+        e.preventDefault()
+      navigate('/dashboard')
+    }
+    useEffect(()=>{
+        window.scrollTo(0,0);
+    },[])
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-25 to-lime-50 flex items-center justify-center p-4">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0 bg-repeat" style={{
+          backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23059669' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")"
+        }}></div>
+      </div>
+
+      <div className="relative w-full max-w-md">
+        {/* Main Login Card */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl border border-green-100/50 p-8">
+          {/* Logo & Header */}
+          <div className="text-center mb-8">
+            <div className="mb-6 flex justify-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-emerald-700 rounded-lg flex items-center justify-center shadow-xl">
+                <span className="text-white font-bold text-2xl">🌾</span>
+              </div>
+            </div>
+            
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-green-800 to-emerald-600 bg-clip-text text-transparent mb-2">
+              {t('welcomeBack')}
+            </h1>
+            <p className="text-green-600">
+              {t('signInAccount')}
+            </p>
+          </div>
+
+          {/* Social Login */}
+          <div className="space-y-3 mb-6">
+            <button className="w-full flex items-center justify-center px-4 py-3 border border-green-200 rounded-xl hover:bg-green-50 transition-all duration-300 group">
+              <span className="mr-3 text-lg">🔍</span>
+              <span className="text-green-700 font-medium group-hover:text-green-800">{t('continueWithGoogle')}</span>
+            </button>
+          </div>
+
+          {/* Divider */}
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-green-200"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-white text-green-600">{t('orContinueEmail')}</span>
+            </div>
+          </div>
+
+          {/* Login Form */}
+          <form className="space-y-6">
+            {/* Email Field */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-semibold text-green-800 mb-2">
+                {t('emailAddress')}
+              </label>
+              <div className="relative">
+                <input
+                  type="email"
+                  id="email"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-green-200 focus:border-green-500 focus:outline-none transition-all duration-300"
+                  placeholder="farmer@example.com"
+                />
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-400">
+                  📧
+                </span>
+              </div>
+            </div>
+
+            {/* Password Field */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-semibold text-green-800 mb-2">
+                {t('password')}
+              </label>
+              <div className="relative">
+                <input
+                  type="password"
+                  id="password"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-green-200 focus:border-green-500 focus:outline-none transition-all duration-300 pr-12"
+                  placeholder={t('password')}
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-400 hover:text-green-600 transition-colors"
+                >
+                  👁️
+                </button>
+              </div>
+            </div>
+
+            {/* Remember Me & Forgot Password */}
+            <div className="flex items-center justify-between">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 text-green-600 border-green-300 rounded focus:ring-green-500"
+                />
+                <span className="ml-2 text-sm text-green-700">{t('rememberMe')}</span>
+              </label>
+              
+              <button
+                type="button"
+                className="text-sm text-green-600 hover:text-green-800 font-medium transition-colors"
+              >
+                {t('forgotPassword')}
+              </button>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="button"
+              className="w-full bg-gradient-to-r cursor-pointer from-green-600 to-emerald-600 text-white py-3 px-4 rounded-xl font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center justify-center"
+              onClick={handleDashboardRedirect}
+            >
+              <span className="mr-2">🚀</span>
+              {t('signIn')}
+            </button>
+          </form>
+
+          {/* Sign Up Link */}
+          <div className="mt-8 text-center">
+            <p className="text-green-600">
+              {t('dontHaveAccount')}{' '}
+              <button className="font-semibold text-green-700 hover:text-green-800  cursor-pointer transition-colors"
+                onClick={handleSignupRedirect}>
+                {t('createOneHere')}
+              </button>
+            </p>
+          </div>
+        </div>
+
+        {/* Back to Home */}
+        <div className="text-center mt-6">
+          <button className="text-green-600 hover:text-green-800  cursor-pointer font-medium transition-colors flex items-center justify-center mx-auto"
+            onClick={handleHomeRedirect}>
+            <span className="mr-2">←</span>
+            {t('backToHome')}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default Login
