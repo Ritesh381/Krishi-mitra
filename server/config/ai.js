@@ -31,4 +31,20 @@ async function callModel(prompt) {
   }
 }
 
-module.exports = callModel;
+async function chatModel(contents) {
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents
+    });
+
+    return response.text;
+  } catch (error) {
+    console.error("Error in chatModel:", error);
+    throw new Error(`chatModel failed: ${JSON.stringify(error)}`);
+  }
+}
+
+
+
+module.exports = {callModel, chatModel};
