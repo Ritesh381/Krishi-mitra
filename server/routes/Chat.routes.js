@@ -6,11 +6,11 @@ const {
   get_history,
   delete_chat,
 } = require("../controllers/chat.controllers");
-// const auth = require("../middleware/auth")
-const auth = (req,res,next) => {
-  req.user = {id : "6900f6cf09b7badb5af18450"}
-  next()
-}
+const auth = require("../middleware/auth")
+// const auth = (req,res,next) => {
+//   req.user = {id : "6900f6cf09b7badb5af18450"}
+//   next()
+// }
 
 const router = express.Router();
 
