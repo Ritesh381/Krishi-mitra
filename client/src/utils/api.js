@@ -4,7 +4,7 @@ async function request(path, { method = 'GET', body, headers = {}, ...opts } = {
   const url = `${API_BASE}${path}`
   const init = {
     method,
-    credentials: 'include', // always include cookies
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...headers,

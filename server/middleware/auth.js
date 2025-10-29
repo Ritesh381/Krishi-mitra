@@ -1,25 +1,28 @@
 const jwt = require("jsonwebtoken");
+const User = require("../models/User.models")
 
-const authenticateToken = (req, res, next) => {
+const authenticateToken = async (req, res, next) => {
   try {
-    // Check if token exists in cookie
-    const token = req.cookies?.token;
+        const token = req.cookies.token;
+        if (!token) {
+            return res.status(401).json({ message: "Authentication failed. No token provided." });
+        }
 
-    if (!token) {
-      return res.status(401).json({ message: "Access token required" });
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id).select("-password");
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+        req.user = user;
+        next();
+
+    } catch (error) {
+        if (error.name === "JsonWebTokenError") {
+            return res.status(401).json({ message: "Authentication failed. Invalid token." });
+        }
+        res.status(500).json({ message: "Server error.", error: error.message });
     }
-
-    // Verify token
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-      if (err) {
-        return res.status(403).json({ message: "Invalid or expired token" });
-      }
-      req.user = user; 
-      next();
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
 };
 
 module.exports = authenticateToken;

@@ -42,7 +42,8 @@ const fetchWithRetry = async (url, options, retries = 3) => {
         url,
         method: options.method,
         headers: options.headers,
-        data: options.body ? JSON.parse(options.body) : undefined, 
+        data: options.body ? JSON.parse(options.body) : undefined,
+        withCredentials: true, // <-- send http-only auth cookie with requests
       });
       return response.data;
     } catch (error) {
