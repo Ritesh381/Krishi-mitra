@@ -87,6 +87,9 @@ const signIn = async (req, res) => {
         user: {
           id: user._id,
           email: user.email,
+          name: user.name,
+          location: user.location,
+          farmSize: user.farmSize,
         },
       });
   } catch (error) {
