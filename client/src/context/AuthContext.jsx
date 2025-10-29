@@ -14,7 +14,7 @@ export function AuthProvider({ children }) {
     let mounted = true
     ;(async () => {
       try {
-        const data = await request('/api/auth/profile')
+        const data = await request('/auth/profile')
         // server may return user object directly or { user }
         const u = data?.user ? data.user : data
         if (mounted) setUser(u || null)
@@ -28,7 +28,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = async (email, password) => {
-    const data = await request('/api/auth/login', { method: 'POST', body: { email, password } })
+    const data = await request('/auth/login', { method: 'POST', body: { email, password } })
     const u = data?.user ? data.user : data
     setUser(u || null)
     try { localStorage.setItem('user', JSON.stringify(u)) } catch (e) {}
@@ -36,7 +36,7 @@ export function AuthProvider({ children }) {
   }
 
   const register = async (payload) => {
-    const data = await request('/api/auth/register', { method: 'POST', body: payload })
+    const data = await request('/auth/register', { method: 'POST', body: payload })
     const u = data?.user ? data.user : data
     setUser(u || null)
     try { localStorage.setItem('user', JSON.stringify(u)) } catch (e) {}
@@ -45,7 +45,7 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      await request('/api/auth/logout', { method: 'POST' })
+      await request('/auth/logout', { method: 'POST' })
     } catch (e) {
       // ignore errors
     }
